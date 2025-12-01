@@ -2,8 +2,9 @@ import yfinance as yf
 import pandas as pd
 from supabase import create_client, Client
 from datetime import timedelta
-
+import os
 # --- CONFIGURATION ---
+# REPLACE THESE WITH YOUR ACTUAL SUPABASE KEYS from your project settings!
 SUPABASE_URL =os.environ.get("https://uvimynszhofmncujwrfb.supabase.co")
 SUPABASE_KEY =os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2aW15bnN6aG9mbW5jdWp3cmZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1MzAwNjgsImV4cCI6MjA3OTEwNjA2OH0.Qc62_n1a0fskv9ZBTx8KOLWw2czrEbb_4X9nSj_phd0")
 if not SUPABASE_URL or not SUPABASE_KEY:
