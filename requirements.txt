@@ -1,0 +1,35 @@
+name: Daily Market Scanner
+
+on:
+  schedule:
+    # Runs at 10:30 UTC (4:00 PM IST) every day
+    - cron: '30 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # FORCE PYTHON 3.12
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' 
+
+      # DIRECT INSTALL (Safest Method)
+      - name: Install libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas supabase feedparser requests beautifulsoup4
+          pip install pandas-ta-classic
+
+      - name: Run Market Report
+        env:
+          SUPABASE_URL: ${{"https://uvimynszhofmncujwrfb.supabase.co"}}
+          SUPABASE_KEY: ${{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2aW15bnN6aG9mbW5jdWp3cmZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1MzAwNjgsImV4cCI6MjA3OTEwNjA2OH0.Qc62_n1a0fskv9ZBTx8KOLWw2czrEbb_4X9nSj_phd0"}}
+        run: |
+          python market_report.py
