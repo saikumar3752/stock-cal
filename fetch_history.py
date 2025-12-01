@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 from supabase import create_client, Client
 import time
-
+import os
 # --- CONFIGURATION ---
 # 1. PASTE YOUR SUPABASE URL & KEY HERE
 SUPABASE_URL =os.environ.get("https://uvimynszhofmncujwrfb.supabase.co")

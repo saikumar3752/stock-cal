@@ -1,6 +1,7 @@
 import yfinance as yf
 from supabase import create_client, Client
 import time
+import os 
 
 # --- CONFIGURATION ---
 SUPABASE_URL =os.environ.get("https://uvimynszhofmncujwrfb.supabase.co")

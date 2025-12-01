@@ -1,0 +1,35 @@
+name: Daily Market Scanner
+
+on:
+  schedule:
+    - cron: '30 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # FORCE PYTHON 3.12 (Hardcoded)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' 
+
+      # HARDCODED INSTALLS (Ignoring requirements.txt)
+      # We are installing 'pandas-ta-classic' which works everywhere
+      - name: Install libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas supabase feedparser requests beautifulsoup4
+          pip install pandas-ta-classic
+
+      - name: Run Market Report
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python market_report.py

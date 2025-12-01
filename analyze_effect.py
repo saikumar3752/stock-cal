@@ -1,5 +1,6 @@
 import pandas as pd
 from supabase import create_client, Client
+import os
 
 # --- CONFIGURATION ---
 SUPABASE_URL =os.environ.get("https://uvimynszhofmncujwrfb.supabase.co")
