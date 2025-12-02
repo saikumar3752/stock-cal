@@ -6,12 +6,19 @@ from datetime import datetime
 import re
 import time
 import os
-from dotenv import load_dotenv
-load_dotenv()
-# --- CONFIGURATION (LOCAL TEST MODE) ---
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
+import warnings
 
-# 2. Enter your Key (PASTE YOUR LONG KEY INSIDE THE QUOTES BELOW)
+
+# --- SAFE IMPORT FOR DOTENV ---
+# This allows the script to run on both Laptop (with .env) and Cloud (without .env)
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except ImportError:
+    pass # If dotenv is missing (like on GitHub), just ignore it.
+
+# --- CONFIGURATION ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("⚠️ Warning: Keys missing. Running in Offline Mode (No Database Upload)")

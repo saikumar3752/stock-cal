@@ -3,13 +3,18 @@ import yfinance as yf
 import pandas as pd
 import warnings
 from supabase import create_client, Client
-from dotenv import load_dotenv
-load_dotenv()
+
+# --- SAFE IMPORT FOR DOTENV ---
+# This allows the script to run on both Laptop (with .env) and Cloud (without .env)
+try:
+    from dotenv import load_dotenv # type: ignore
+    load_dotenv()
+except ImportError:
+    pass # If dotenv is missing (like on GitHub), just ignore it.
+
 # --- CONFIGURATION ---
-# 1. Get Keys Securely (Fixing the os.environ bug)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-# 2. Connect (or skip if keys missing)
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("⚠️ Keys missing. Running in Offline Mode (No Database Upload)")
     supabase = None
