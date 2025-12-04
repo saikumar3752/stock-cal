@@ -1,42 +1,52 @@
-name: Daily Market Scanner
+name: FinTech Automation Pipeline
 
 on:
   schedule:
-    # Runs at 3:30 UTC (9:00 AM IST) -> Morning News
+    # 3:30 UTC = 9:00 AM IST
     - cron: '30 3 * * *'
-    # Runs at 7:30 UTC (1:00 PM IST) -> Mid-Day Update
-    - cron: '30 7 * * *'
-    # Runs at 10:30 UTC (4:00 PM IST) -> Market Report
+    # 10:30 UTC = 4:00 PM IST
     - cron: '30 10 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual button click
 
 jobs:
-  run-scanner:
+  run-fintech-engine:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # Safety limit
 
     steps:
-      - name: Check out code
+      # --- 1. Setup ---
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # FORCE PYTHON 3.12 (Hardcoded)
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12' 
+          python-version: '3.12'
+          cache: 'pip' # Speeds up future runs
 
-      # HARDCODED INSTALLS (Ignoring requirements.txt)
-      # We are installing 'pandas-ta-classic' which works everywhere
-      - name: Install libraries
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas supabase feedparser requests beautifulsoup4
-          pip install pandas-ta-classic
-
+          pip install -r requirements.txt
+      
+      # --- 2. Run Market Report (Technical Analysis) ---
       - name: Run Market Report
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: |
-          python market_report.py
-          python fetch_rss_news.py
+        run: python market_report.py
 
+      # --- 3. Run News Fetcher (RSS) ---
+      # 'if: always()' ensures this runs even if Market Report fails
+      - name: Run News Fetcher
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python fetch_rss_news.py
+
+      # --- 4. (Future) Add AI Script Here ---
+      # - name: Run AI Analysis
+      #   if: always()
+      #   env: ...
+      #   run: python ai_analyst.py

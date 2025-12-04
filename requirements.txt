@@ -1,0 +1,18 @@
+# Core Logic
+numpy<2.0.0
+pandas==2.2.2
+requests==2.32.3
+
+# Financial & Analysis
+yfinance==0.2.40
+# pandas-ta-classic is better than pandas_ta for Python 3.12
+pandas-ta-classic==0.3.14.9b0 
+
+# Database & Scrapers
+supabase==2.5.0
+feedparser==6.0.10
+beautifulsoup4==4.12.3
+lxml==5.2.2
+
+# Local Dev Only (GitHub will ignore if not needed, but good to have)
+python-dotenv==1.0.1

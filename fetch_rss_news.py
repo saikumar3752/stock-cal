@@ -5,33 +5,33 @@ from supabase import create_client, Client
 from datetime import datetime
 import re
 import time
-import os
-import warnings
+import os  # Essential
 
-
-# --- SAFE IMPORT FOR DOTENV ---
-# This allows the script to run on both Laptop (with .env) and Cloud (without .env)
+# --- 1. SETUP ENVIRONMENT VARIABLES ---
+# We try to load .env for local development, but we don't crash if it fails.
 try:
-    from dotenv import load_dotenv  # type: ignore
+    from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass # If dotenv is missing (like on GitHub), just ignore it.
+    # This is expected on GitHub Actions (we use Secrets there)
+    pass
 
-# --- CONFIGURATION ---
+# --- 2. GET KEYS SAFELY ---
+# We fetch these from the OS environment (works for both Local .env and GitHub Secrets)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("⚠️ Warning: Keys missing. Running in Offline Mode (No Database Upload)")
-# 3. CONNECT (This is the line you were missing!)
-try:
-    if "PASTE_YOUR" in SUPABASE_KEY:
-        print("❌ STOP: You forgot to paste your actual Supabase Key in the code!")
-        exit()
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-except Exception as e:
-    print(f"❌ Connection Failed: {e}")
-    exit()
 
+# --- 3. INITIALIZE SUPABASE ---
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"⚠️ Supabase Connection Warning: {e}")
+else:
+    print("⚠️ WARNING: SUPABASE_URL or SUPABASE_KEY not found in environment.")
+
+# ... (Rest of your script remains exactly the same) ...
 # Browser Headers
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -48,6 +48,7 @@ SEARCH_TOPICS = [
 ]
 
 def get_broker_context():
+    if not supabase: return {}
     print("🧠 Loading Analyst Data for Context...")
     try:
         response = supabase.table("broker_targets").select("symbol, target_mean, upside_pct, recommendation").execute()
@@ -148,15 +149,14 @@ def fetch_rss_news():
             print(f"Skipping topic due to error: {e}")
             continue
 
-    if articles_to_save:
+    if articles_to_save and supabase:
         try:
-            # THIS IS THE LINE THAT WAS FAILING
             supabase.table("news_articles").upsert(articles_to_save, on_conflict="slug").execute()
             print(f"✅ Success! Saved {len(articles_to_save)} articles to database.")
         except Exception as e:
-            print(f"❌ Database Error: {e}")
+            print(f"❌ Database Upload Error: {e}")
     else:
-        print("   No new news found.")
+        print("   No new news found or Database not connected.")
 
 if __name__ == "__main__":
     fetch_rss_news()
