@@ -17,26 +17,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # <--- CHANGED FROM 3.9 TO 3.11
+          python-version: '3.9'
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
           pip install pandas yfinance pandas_ta supabase requests
 
       - name: 1. Update Market Data (Ingest)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python ingest_data.py
-        # Note: If your file is in a folder, use: python stockcal-engine/ingest_data.py
+        run: python stockcal-engine/ingest_data.py
+        # Note: Adjust path if ingest_data.py is in root or a folder
 
       - name: 2. Update Strategy Signals
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python master_engine.py
-        # Note: If your file is in a folder, use: python stockcal-engine/master_engine.py
+        run: python stockcal-engine/master_engine.py
+        # Note: Adjust path if master_engine.py is in root
 
       - name: 3. Run Smart Bots (Forward Test)
         env:
