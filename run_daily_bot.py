@@ -1,57 +1,67 @@
 import yfinance as yf
 import pandas as pd
-import pandas_ta as ta
 from supabase import create_client, Client
 from datetime import datetime
 import time
-
-import os  # Essential
+import os
 
 # --- 1. SETUP ENVIRONMENT VARIABLES ---
-# We try to load .env for local development, but we don't crash if it fails.
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    # This is expected on GitHub Actions (we use Secrets there)
     pass
 
-# --- 2. GET KEYS SAFELY ---
-# We fetch these from the OS environment (works for both Local .env and GitHub Secrets)
+# --- 2. GET KEYS ---
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)            
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# --- 3. CUSTOM INDICATORS (No more pandas_ta dependency!) ---
+def calculate_sma(series, length):
+    """Calculates Simple Moving Average"""
+    return series.rolling(window=length).mean()
+
+def calculate_rsi(series, length=14):
+    """Calculates RSI using Wilder's Smoothing (Standard)"""
+    delta = series.diff()
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    
+    # Wilder's Smoothing
+    avg_gain = gain.ewm(alpha=1/length, min_periods=length, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1/length, min_periods=length, adjust=False).mean()
+    
+    rs = avg_gain / avg_loss
+    return 100 - (100 / (1 + rs))
+
+# --- 4. MAIN LOGIC ---
 def get_latest_metrics(ticker):
-    """
-    Downloads data and calculates RSI, SMA, etc.
-    Returns: { 'close': 1200, 'rsi': 45, 'sma_50': 1150, 'sma_200': 1100 }
-    """
     try:
-        # Download slightly more data to ensure indicators calculate correctly
+        # Download data
         df = yf.download(f"{ticker}.NS", period="1y", interval="1d", progress=False)
         if df.empty: return None
         
-        # Handle MultiIndex if necessary
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
-        # Calculate Indicators
-        df['RSI'] = ta.rsi(df['Close'], length=14)
-        df['SMA_50'] = ta.sma(df['Close'], length=50)
-        df['SMA_200'] = ta.sma(df['Close'], length=200)
+        # USE OUR CUSTOM FUNCTIONS
+        df['RSI'] = calculate_rsi(df['Close'], length=14)
+        df['SMA_50'] = calculate_sma(df['Close'], length=50)
+        df['SMA_200'] = calculate_sma(df['Close'], length=200)
         
-        # Get Latest Values
         latest = df.iloc[-1]
+        
+        # Safe rounding (handle NaN)
+        def safe_round(val):
+            return round(float(val), 2) if pd.notnull(val) else 0.0
+
         return {
-            'close': round(float(latest['Close']), 2),
-            'rsi': round(float(latest['RSI']), 2),
-            'sma_50': round(float(latest['SMA_50']), 2),
-            'sma_200': round(float(latest['SMA_200']), 2),
+            'close': safe_round(latest['Close']),
+            'rsi': safe_round(latest['RSI']),
+            'sma_50': safe_round(latest['SMA_50']),
+            'sma_200': safe_round(latest['SMA_200']),
             'date': latest.name.strftime('%Y-%m-%d')
         }
     except Exception as e:
@@ -59,21 +69,12 @@ def get_latest_metrics(ticker):
         return None
 
 def check_condition(metrics, condition_str):
-    """
-    Parses string like "RSI < 30" and checks if true.
-    """
     try:
         if "RSI < 30" in condition_str:
             return metrics['rsi'] < 30, f"{metrics['rsi']}"
-        
         elif "SMA 50 > 200" in condition_str:
             is_golden = metrics['sma_50'] > metrics['sma_200']
             return is_golden, f"{metrics['sma_50']} vs {metrics['sma_200']}"
-            
-        elif "MACD" in condition_str:
-            # Simple placeholder logic for MACD
-            return False, "Pending"
-            
         return False, "Unknown Rule"
     except:
         return False, "Error"
@@ -81,7 +82,6 @@ def check_condition(metrics, condition_str):
 def run_bot():
     print(f"🤖 Smart Bot Waking Up... {datetime.now()}")
     
-    # 1. Fetch All 'MONITORING' Bots
     response = supabase.table("user_deployments").select("*").eq("status", "MONITORING").execute()
     bots = response.data
     
@@ -92,16 +92,13 @@ def run_bot():
         rule = bot.get('trigger_condition', 'Signal')
         print(f"   🔎 Checking {ticker} for {rule}...", end=" ")
         
-        # 2. Get Real Data
         metrics = get_latest_metrics(ticker)
         if not metrics:
             print("Skipped (No Data)")
             continue
             
-        # 3. Check Rules
         triggered, current_value_str = check_condition(metrics, rule)
         
-        # 4. Update Database
         if triggered:
             print(f"✅ TRIGGERED! Buying at ₹{metrics['close']}")
             supabase.table("user_deployments").update({
@@ -110,15 +107,13 @@ def run_bot():
                 "entry_date": metrics['date'],
                 "live_metric_value": f"Triggered at {current_value_str}"
             }).eq("id", bot['id']).execute()
-            
         else:
             print(f"⏳ Waiting (Current: {current_value_str})")
-            # Just update the display value so user sees live progress
             supabase.table("user_deployments").update({
                 "live_metric_value": str(current_value_str)
             }).eq("id", bot['id']).execute()
             
-        time.sleep(0.5) # Be nice to Yahoo API
+        time.sleep(0.5)
 
     print("🎉 Bot Run Complete.")
 

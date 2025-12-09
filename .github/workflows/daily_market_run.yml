@@ -2,9 +2,8 @@ name: Daily Market Algo Run
 
 on:
   schedule:
-    # Runs at 10:05 UTC = 3:35 PM IST (Market Close + 5 mins)
     - cron: '5 10 * * *'
-  workflow_dispatch: # Allows you to click "Run Now" manually to test
+  workflow_dispatch:
 
 jobs:
   run-algo-system:
@@ -14,34 +13,32 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Use Python 3.10 (Most stable for Finance libraries right now)
-      - name: Set up Python 3.10
+      # Use Standard Python 3.9 (Safe for Finance)
+      - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
-      # FIX THE DEPENDENCY ERRORS
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          # 1. Install Numpy < 2.0 (CRITICAL: Newer versions break pandas_ta)
-          pip install "numpy<2.0.0"
-          # 2. Install standard libraries from official PyPI
-          pip install pandas yfinance pandas_ta supabase requests
+          
+          # NO pandas_ta NEEDED ANYMORE!
+          # Just install standard libraries that always work.
+          pip install pandas yfinance supabase requests
 
-      - name: 1. Update Market Data (Ingest)
+      - name: 1. Update Market Data
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python ingest_data.py
 
-      - name: 2. Update Strategy Signals
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python master_engine.py
+      # Skipping Master Engine for now to focus on the Bot
+      # - name: 2. Update Strategy Signals
+      #   env: ...
+      #   run: python master_engine.py
 
-      - name: 3. Run Smart Bots (Forward Test)
+      - name: 3. Run Smart Bots
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
