@@ -21,7 +21,6 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 # --- IMPORT THE LIST WE JUST MADE ---
 from nifty500_list import NIFTY_MASTER_LIST
 
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def fetch_and_store():
