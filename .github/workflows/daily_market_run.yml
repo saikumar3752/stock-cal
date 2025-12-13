@@ -2,7 +2,8 @@ name: Daily Market Algo Run
 
 on:
   schedule:
-    - cron: '5 10 * * *'
+   # New: '5 10 * * 1-5' (Monday to Friday only)
+   - cron: '5 10 * * 1-5'
   workflow_dispatch:
 
 jobs:
