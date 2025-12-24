@@ -13,11 +13,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Use Standard Python 3.9 (Safe for Finance)
-      - name: Set up Python 3.9
+      # Use Standard Python 3.10 (Safe for Finance)
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install Dependencies
         run: |
@@ -43,3 +43,27 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python run_daily_bot.py
+jobs:
+  run-algo-system:
+    runs-on: ubuntu-latest
+    steps:
+      # ... (Setup Steps) ...
+
+      # JOB 1: THE TRADING DESK (Fast Money)
+      # Scans 500 stocks for Golden Cross, etc.
+      - name: 4. Run Trading Signals
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python master_engine.py
+
+      # JOB 2: THE WEALTH DESK (Slow Money)
+      # Manages your 15L Portfolio of 33 stocks
+      - name: 5. Run Fortress Wealth Manager
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python fortress_engine.py
+
+
+        
